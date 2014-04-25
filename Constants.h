@@ -4,6 +4,15 @@
 #define Brate           115200     // Baud rate for serial communications
 
 
+//=================================== CONTROL CODES =================================================================================
+#define FL         17996     // Flush buffer
+#define AN         16718     // Get analog input vlaues
+#define SV         21334     // Get position information for servos
+#define HB         18498     // H-bridge
+
+#define BT         16980     // Battery level
+#define ST         21332     // Stop
+
 
 //=================================== RC MODE OPTIONS ===============================================================================
 
@@ -14,21 +23,19 @@
 #define scale               12     // scale factor for RC signal to PWM
 
 
-
 //=================================== BATTERY CHARGER SETTINGS ======================================================================
 
 #define batvolt            487     // This is the nominal battery voltage reading. Peak charge can only occur above this voltage.
-#define lowvolt            410     // This is the voltage at which the speed controller goes into recharge mode.
+#define lowvolt            400     // This is the voltage at which the speed controller goes into recharge mode.
 #define chargetimeout   300000     // If the battery voltage does not change in this number of milliseconds then stop charging.
-
+#define reportInterval   30000     // How often to report battery status during charging
 
 
 //=================================== H BRIDGE SETTINGS =============================================================================
 
-#define Leftmaxamps        800     // set overload current for left motor 
-#define Rightmaxamps       800     // set overload current for right motor 
+#define Leftmaxamps        800     // set overload current for left motor
+#define Rightmaxamps       800     // set overload current for right motor
 #define overloadtime       100     // time in mS before motor is re-enabled after overload occurs
-
 
 
 //=================================== SERVO SETTINGS ================================================================================
@@ -40,6 +47,3 @@
 #define DServo4           1500     // default position for servo4 on "power up" - 1500uS is center position on most servos
 #define DServo5           1500     // default position for servo5 on "power up" - 1500uS is center position on most servos
 #define DServo6           1500     // default position for servo6 on "power up" - 1500uS is center position on most servos
-
-
-

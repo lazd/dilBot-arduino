@@ -8,7 +8,9 @@
 unsigned int Volts;
 unsigned int LeftAmps;
 unsigned int RightAmps;
+unsigned long chargeStart;
 unsigned long chargeTimer;
+unsigned long reportTimer;
 unsigned long leftoverload;
 unsigned long rightoverload;
 int highVolts;
@@ -20,15 +22,12 @@ int Steer;
 byte Charged=1;                                               // 0=Flat battery  1=Charged battery
 int Leftmode=1;                                               // 0=reverse, 1=brake, 2=forward
 int Rightmode=1;                                              // 0=reverse, 1=brake, 2=forward
-byte Leftmodechange=0;                                        // Left input must be 1500 before brake or reverse can occur
-byte Rightmodechange=0;                                       // Right input must be 1500 before brake or reverse can occur
 int LeftPWM;                                                  // PWM value for left  motor speed / brake
 int RightPWM;                                                 // PWM value for right motor speed / brake
 int data;
 int servo[7];
 
 //-------------------------------------------------------------- define servos ------------------------------------------------------
-
 
 Servo Servo0;                                                 // define servos
 Servo Servo1;                                                 // define servos
@@ -63,14 +62,32 @@ void setup()
   //------------------------------------------------------------ Initialize I/O pins --------------------------------------------------
 
   pinMode (Charger,OUTPUT);                                   // change Charger pin to output
-  digitalWrite (Charger,1);                                   // disable current regulator to charge battery
+  digitalWrite(Charger,1);                                   // disable current regulator to charge battery
 
   if (Cmode==1) 
   {
     Serial.begin(Brate);                                      // enable serial communications if Cmode=1
     Serial.flush();                                           // flush buffer
-  } 
-  //Serial.begin(57600);
+  }
+  else {
+    // Enable regardless for logging
+    Serial.begin(Brate);
+  }
+  
+  Serial.print("Wild Thumper started in ");
+  switch(Cmode) {
+    case 0:
+      Serial.print("RC");
+      break;
+    case 1:
+      Serial.print("Serial");
+      break;
+    case 2:
+      Serial.print("I2C");
+      break;
+  }
+  Serial.println(" mode");
+  logBatteryVoltage();
 }
 
 
@@ -111,7 +128,13 @@ void loop()
     startVolts=Volts;
     chargeTimer=millis();                                     // record the time
 
-    digitalWrite (Charger,0);                                 // enable current regulator to charge battery
+    chargeStart=millis();                                     // record start time
+
+    Serial.print("Battery dead at ");
+    Serial.print(Volts, DEC);
+    Serial.println(", enabling charger...");
+
+    digitalWrite(Charger,0);                                  // enable current regulator to charge battery
   }
 
   //------------------------------------------------------------ CHARGE BATTERY -------------------------------------------------------
@@ -123,13 +146,26 @@ void loop()
       highVolts=Volts;                                        // record the highest voltage. Used to detect peak charging.
       chargeTimer=millis();                                   // when voltage increases record the time
     }
+    
+    if ((millis()-reportTimer) > reportInterval) {
+      logBatteryVoltage();
+      reportTimer=millis();
+    }
 
     if (Volts>batvolt)                                        // battery voltage must be higher than this before peak charging can occur.
     {
       if ((highVolts-Volts)>5 || (millis()-chargeTimer)>chargetimeout) // has voltage begun to drop or levelled out?
       {
         Charged=1;                                            // battery voltage has peaked
-        digitalWrite (Charger,1);                             // turn off current regulator
+        digitalWrite(Charger,1);                             // turn off current regulator
+        
+        Serial.print("Charge complete after ");
+        Serial.print((millis()-chargeStart)*1000 / 60);
+        Serial.print(":");
+        Serial.print((millis()-chargeStart)*1000 % 60);
+        Serial.println("!");
+        
+        logBatteryVoltage();
       }
     } 
   }
@@ -200,26 +236,20 @@ void loop()
     }
     else                                                      // Battery is flat
     {
-      analogWrite (LmotorA,0);                                // turn off motors
-      analogWrite (LmotorB,0);                                // turn off motors
-      analogWrite (RmotorA,0);                                // turn off motors
-      analogWrite (RmotorB,0);                                // turn off motors
+      analogWrite(LmotorA,0);                                // turn off motors
+      analogWrite(LmotorB,0);                                // turn off motors
+      analogWrite(RmotorA,0);                                // turn off motors
+      analogWrite(RmotorB,0);                                // turn off motors
     }
   }
 }
 
 
-
-
-
-
 void RCmode()
 {
   //------------------------------------------------------------ Code for RC inputs ---------------------------------------------------------
-
   Speed=pulseIn(RCleft,HIGH,25000);                           // read throttle/left stick
   Steer=pulseIn(RCright,HIGH,25000);                          // read steering/right stick
-
 
   if (Speed==0) Speed=1500;                                   // if pulseIn times out (25mS) then set speed to stop
   if (Steer==0) Steer=1500;                                   // if pulseIn times out (25mS) then set steer to centre
@@ -238,12 +268,14 @@ void RCmode()
     Leftspeed=Speed;
     Rightspeed=Steer;
   }
+  
   /*
   Serial.print("Left:");
-  Serial.print(Leftspeed);
-  Serial.print(" -- Right:");
+  Serial.println(Leftspeed);
+  Serial.print("Right:");
   Serial.println(Rightspeed);
   */
+ 
   Leftmode=2;
   Rightmode=2;
   if (Leftspeed>(Leftcenter+RCdeadband)) Leftmode=0;          // if left input is forward then set left mode to forward
@@ -255,11 +287,6 @@ void RCmode()
   RightPWM=abs(Rightspeed-Rightcenter)*10/scale;              // scale 1000-2000uS to 0-255
   RightPWM=min(RightPWM,255);                                 // set maximum limit 255
 }
-
-
-
-
-
 
 
 void SCmode()
@@ -276,7 +303,6 @@ void SCmode()
                                                               //      left  motor PWM  0-255
                                                               //      right motor mode 0-2
                                                               //      right motor PWM  0-255
-   
  
   if (Serial.available()>1)                                   // command available
   {
@@ -285,11 +311,23 @@ void SCmode()
     int command=A*256+B;
     switch (command)
     {
-      case 17996:                                             // FL
+      case ST: // Stop
+         Leftmode=1;
+         LeftPWM=0;
+         Rightmode=1;
+         RightPWM=0;
+         break;
+
+      case BT: // Battery level
+        logBatteryVoltage();
+        break;
+
+      case FL:                                                // FL
         Serial.flush();                                       // flush buffer
         break;
         
-      case 16718:                                             // AN - return values of analog inputs 1-5
+      case AN:                                                // AN - return values of analog inputs 1-5
+        Serial.println('Reporting analog input values');
         for (int i=1;i<6;i++)                                 // index analog inputs 1-5
         {
           data=analogRead(i);                                 // read 10bit analog input 
@@ -298,7 +336,7 @@ void SCmode()
         }
         break;
               
-       case 21334:                                            // SV - receive postion information for servos 0-6
+       case SV:                                               // SV - receive postion information for servos 0-6
          for (int i=0;i<15;i++)                               // read 14 bytes of data
          {
            Serialread();                                      
@@ -313,7 +351,7 @@ void SCmode()
          Servo6.writeMicroseconds(servo[12]*256+servo[13]);   // set servo position
          break;
        
-       case 18498:                                            // HB - mode and PWM data for left and right motors
+       case HB:                                               // HB - mode and PWM data for left and right motors
          Serialread();
          Leftmode=data;
          Serialread();
@@ -322,6 +360,16 @@ void SCmode()
          Rightmode=data;
          Serialread();
          RightPWM=data;
+         
+         Serial.print("Leftmode = ");
+         Serial.print(Leftmode);
+         Serial.print(" at ");
+         Serial.println(LeftPWM);
+         Serial.print("Rightmode = ");
+         Serial.print(Rightmode);
+         Serial.print(" at ");
+         Serial.println(RightPWM);
+
          break;
          
        default:                                                // invalid command
@@ -329,6 +377,7 @@ void SCmode()
     }
   }
 }
+
 
 void Serialread() 
 {//---------------------------------------------------------- Read serial port until data has been received -----------------------------------
@@ -339,23 +388,18 @@ void Serialread()
 }
     
 
-
-
-
-
-
 void I2Cmode()
 {//----------------------------------------------------------- Your code goes here ------------------------------------------------------------
 
 }
 
 
-
-
-
-
-
-
-
-
-
+void logBatteryVoltage() {
+  int units = analogRead(Battery);
+  float volts = units/65.0;
+  Serial.print("Battery at ");
+  Serial.print(volts, DEC);
+  Serial.print("v (");
+  Serial.print(units);
+  Serial.println(" units)");
+}
