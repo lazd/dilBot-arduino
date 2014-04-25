@@ -19,16 +19,22 @@ int Leftspeed=0;
 int Rightspeed=0;
 int Speed;
 int Steer;
+
 // 0=Flat battery  1=Charged battery
 byte Charged=1;
+
 // 0=reverse, 1=brake, 2=forward
 int Leftmode=1;
+
 // 0=reverse, 1=brake, 2=forward
 int Rightmode=1;
+
 // PWM value for left  motor speed / brake
 int LeftPWM;
+
 // PWM value for right motor speed / brake
 int RightPWM;
+
 int data;
 int servo[7];
 
@@ -77,8 +83,7 @@ void setup()
   // Disable current regulator to charge battery
   digitalWrite(Charger, 1);
 
-  if (Cmode==1)
-  {
+  if (Cmode==1) {
     // enable serial communications if Cmode=1
     Serial.begin(Brate);
 
@@ -91,6 +96,7 @@ void setup()
   }
 
   Serial.print("Wild Thumper started in ");
+
   switch(Cmode) {
     case 0:
       Serial.print("RC");
@@ -102,13 +108,13 @@ void setup()
       Serial.print("I2C");
       break;
   }
+
   Serial.println(" mode");
   logBatteryVoltage();
 }
 
 
-void loop()
-{
+void loop() {
   //
   // Check battery voltage and current draw of motors
   //
@@ -126,8 +132,7 @@ void loop()
   //Serial.print("    ");
   //Serial.println(RightAmps);
 
-  if (LeftAmps>Leftmaxamps)                                   // is motor current draw exceeding safe limit
-  {
+  if (LeftAmps>Leftmaxamps) { // is motor current draw exceeding safe limit
     // Turn off motors
     analogWrite (LmotorA,0);
     analogWrite (LmotorB,0);
@@ -136,8 +141,7 @@ void loop()
     leftoverload=millis();
   }
 
-  if (RightAmps>Rightmaxamps)                                 // is motor current draw exceeding safe limit
-  {
+  if (RightAmps>Rightmaxamps) { // is motor current draw exceeding safe limit
     // Turn off motors
     analogWrite (RmotorA,0);
     analogWrite (RmotorB,0);
@@ -146,9 +150,7 @@ void loop()
     rightoverload=millis();
   }
 
-  if ((Volts<lowvolt) && (Charged==1))                        // check condition of the battery
-  {                                                           // change battery status from charged to flat
-
+  if ((Volts<lowvolt) && (Charged==1)) { // check condition of the battery                                                           // change battery status from charged to flat
     //
     // FLAT BATTERY speed controller shuts down until battery is recharged
     //
@@ -177,14 +179,14 @@ void loop()
     digitalWrite(Charger,0);
   }
 
-  //
-  // CHARGE BATTERY
-  //
+  if ((Charged==0) && (Volts-startVolts>67)) {
+    //
+    // CHARGE BATTERY
+    //
+    // if battery is flat and charger has been connected (voltage has increased by at least 1V)
 
-  if ((Charged==0) && (Volts-startVolts>67))                  // if battery is flat and charger has been connected (voltage has increased by at least 1V)
-  {
-    if (Volts>highVolts)                                      // has battery voltage increased?
-    {
+    // has battery voltage increased?
+    if (Volts>highVolts) {
       // record the highest voltage. Used to detect peak charging.
       highVolts=Volts;
 
@@ -197,10 +199,10 @@ void loop()
       reportTimer=millis();
     }
 
-    if (Volts>batvolt)                                        // battery voltage must be higher than this before peak charging can occur.
-    {
-      if ((highVolts-Volts)>5 || (millis()-chargeTimer)>chargetimeout) // has voltage begun to drop or levelled out?
-      {
+    // battery voltage must be higher than this before peak charging can occur.
+    if (Volts>batvolt) {
+      // has voltage begun to drop or levelled out?
+      if ((highVolts-Volts)>5 || (millis()-chargeTimer)>chargetimeout) {
         // battery voltage has peaked
         Charged=1;
 
@@ -222,9 +224,7 @@ void loop()
     //
     // GOOD BATTERY speed controller opperates normally
     //
-
-    switch(Cmode)
-    {
+    switch(Cmode) {
       // RC mode via D0 and D1
       case 0:
         RCmode();
@@ -245,50 +245,46 @@ void loop()
     // Code to drive dual "H" bridges
     //
 
-    if (Charged==1)                                           // Only power motors if battery voltage is good
-    {
-      if ((millis()-leftoverload)>overloadtime)
-      {
-        switch (Leftmode)                                     // if left motor has not overloaded recently
-        {
-        case 2:                                               // left motor forward
-          analogWrite(LmotorA,0);
-          analogWrite(LmotorB,LeftPWM);
-          break;
+    if (Charged==1) { // Only power motors if battery voltage is good
+      if ((millis()-leftoverload)>overloadtime) {
+        switch (Leftmode) { // if left motor has not overloaded recently
+          case 2:                                               // left motor forward
+            analogWrite(LmotorA,0);
+            analogWrite(LmotorB,LeftPWM);
+            break;
 
-        case 1:                                               // left motor brake
-          analogWrite(LmotorA,LeftPWM);
-          analogWrite(LmotorB,LeftPWM);
-          break;
+          case 1:                                               // left motor brake
+            analogWrite(LmotorA,LeftPWM);
+            analogWrite(LmotorB,LeftPWM);
+            break;
 
-        case 0:                                               // left motor reverse
-          analogWrite(LmotorA,LeftPWM);
-          analogWrite(LmotorB,0);
-          break;
+          case 0:                                               // left motor reverse
+            analogWrite(LmotorA,LeftPWM);
+            analogWrite(LmotorB,0);
+            break;
         }
       }
-      if ((millis()-rightoverload)>overloadtime)
-      {
-        switch (Rightmode)                                    // if right motor has not overloaded recently
-        {
-        case 2:                                               // right motor forward
-          analogWrite(RmotorA,0);
-          analogWrite(RmotorB,RightPWM);
-          break;
 
-        case 1:                                               // right motor brake
-          analogWrite(RmotorA,RightPWM);
-          analogWrite(RmotorB,RightPWM);
-          break;
+      if ((millis()-rightoverload)>overloadtime) {
+        switch (Rightmode) { // if right motor has not overloaded recently
+          case 2:                                               // right motor forward
+            analogWrite(RmotorA,0);
+            analogWrite(RmotorB,RightPWM);
+            break;
 
-        case 0:                                               // right motor reverse
-          analogWrite(RmotorA,RightPWM);
-          analogWrite(RmotorB,0);
-          break;
+          case 1:                                               // right motor brake
+            analogWrite(RmotorA,RightPWM);
+            analogWrite(RmotorB,RightPWM);
+            break;
+
+          case 0:                                               // right motor reverse
+            analogWrite(RmotorA,RightPWM);
+            analogWrite(RmotorB,0);
+            break;
         }
       }
     }
-    else {                                                     
+    else {
       // Battery is flat
       // Turn off motors
       analogWrite(LmotorA,0);
@@ -300,12 +296,10 @@ void loop()
 }
 
 
-void RCmode()
-{
-  //
-  // Code for RC inputs
-  //
-
+//
+// Code for RC inputs
+//
+void RCmode() {
   // read throttle/left stick
   Speed=pulseIn(RCleft,HIGH,25000);
 
@@ -324,15 +318,13 @@ void RCmode()
   // if Steer input is within deadband set to 1500 (1500uS=center position for most servos)
   if (abs(Steer-1500)<RCdeadband) Steer=1500;
 
-  if (Mix==1)                                                 
-  {
+  if (Mix==1) {
     // Mixes speed and steering signals
     Steer=Steer-1500;
     Leftspeed=Speed-Steer;
     Rightspeed=Speed+Steer;
   }
-  else                                                        
-  {
+  else {
     // Individual stick control
     Leftspeed=Speed;
     Rightspeed=Steer;
@@ -347,22 +339,26 @@ void RCmode()
 
   Leftmode=2;
   Rightmode=2;
- 
+
   // if left input is forward then set left mode to forward
-  if (Leftspeed>(Leftcenter+RCdeadband)) Leftmode=0;
- 
+  if (Leftspeed>(Leftcenter+RCdeadband)) {
+    Leftmode=0;
+  }
+
   // if right input is forward then set right mode to forward
-  if (Rightspeed>(Rightcenter+RCdeadband)) Rightmode=0;
+  if (Rightspeed>(Rightcenter+RCdeadband)) {
+    Rightmode=0;
+  }
 
   // scale 1000-2000uS to 0-255
   LeftPWM=abs(Leftspeed-Leftcenter)*10/scale;
- 
+
   // set maximum limit 255
   LeftPWM=min(LeftPWM,255);
 
   // scale 1000-2000uS to 0-255
   RightPWM=abs(Rightspeed-Rightcenter)*10/scale;
- 
+
   // set maximum limit 255
   RightPWM=min(RightPWM,255);
 }
@@ -379,49 +375,49 @@ void RCmode()
 //      right motor mode 0-2
 //      right motor PWM  0-255
 void SCmode() {
-  if (Serial.available()>1)
-  {
+  if (Serial.available()>1) {
     int A=Serial.read();
     int B=Serial.read();
     int command=A*256+B;
-    switch (command)
-    {
-      case ST: // Stop
+    switch (command) {
+      // Stop
+      case ST:
          Leftmode=1;
          LeftPWM=0;
          Rightmode=1;
          RightPWM=0;
          break;
 
-      case BT: // Battery level
+      // Check battery level
+      case BT:
         logBatteryVoltage();
         break;
 
-      case FL:                                                // FL
-        // flush buffer
+      // Flush buffer
+      case FL:
         Serial.flush();
         break;
 
-      case AN:                                                // AN - return values of analog inputs 1-5
+      // AN - return values of analog inputs 1-5
+      case AN:
         Serial.println('Reporting analog input values');
-        for (int i=1;i<6;i++)                                 // index analog inputs 1-5
-        {
+        // index analog inputs 1-5
+        for (int i=1;i<6;i++) {
           // read 10bit analog input
           data=analogRead(i);
-          
+
           // transmit high byte
           Serial.write(highByte(data));
-          
+
           // transmit low byte
           Serial.write(lowByte(data));
         }
         break;
 
         // SV - receive postion information for servos 0-6
-       case SV:       
-         // read 14 bytes of data                                        
-         for (int i=0;i<15;i++)                               
-         {
+       case SV:
+         // read 14 bytes of data
+         for (int i=0;i<15;i++) {
            Serialread();
            servo[i]=data;
          }
@@ -435,8 +431,8 @@ void SCmode() {
          Servo6.writeMicroseconds(servo[12]*256+servo[13]);
          break;
 
-       // HB - mode and PWM data for left and right motors
-       case HB:                                               
+       // Set mode and PWM data for left and right motors
+       case HB:
          Serialread();
          Leftmode=data;
          Serialread();
@@ -446,6 +442,7 @@ void SCmode() {
          Serialread();
          RightPWM=data;
 
+         /*
          Serial.print("Leftmode = ");
          Serial.print(Leftmode);
          Serial.print(" at ");
@@ -454,11 +451,12 @@ void SCmode() {
          Serial.print(Rightmode);
          Serial.print(" at ");
          Serial.println(RightPWM);
+         */
 
          break;
 
        // invalid command
-       default:                                                
+       default:
          Serial.flush();
     }
   }
@@ -467,22 +465,15 @@ void SCmode() {
 //
 // Read serial port until data has been received
 //
-void Serialread()
-{
-  do
-  {
+void Serialread() {
+  do {
     data=Serial.read();
   } while (data<0);
 }
 
-
-void I2Cmode()
-{
-//
-// Your code goes here
-//
+void I2Cmode() {
+  // Your code goes here
 }
-
 
 void logBatteryVoltage() {
   int units = analogRead(Battery);
@@ -493,4 +484,3 @@ void logBatteryVoltage() {
   Serial.print(units);
   Serial.println(" units)");
 }
-
