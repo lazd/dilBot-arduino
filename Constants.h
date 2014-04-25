@@ -1,6 +1,7 @@
 // MODE OF COMMUNICATION
-#define Cmode                0     // Sets communication mode: 0=RC    1=Serial    2=I2C
+#define Cmode                1     // Sets communication mode: 0=RC    1=Serial    2=I2C
 #define Brate           115200     // Baud rate for serial communications
+#define reportInterval     100     // How often to report state
 
 // CONTROL CODES
 #define FL               17996     // Flush buffer
@@ -10,18 +11,22 @@
 #define BT               16980     // Check battery level
 #define ST               21332     // Stop
 
+// MOTION
+#define	FORWARD				2
+#define	BRAKE				1
+#define	REVERSE				0
+
 // RC MODE OPTIONS
-#define Mix                  1     // Set to 1 if L/R and F/R signals from RC need to be mixed
-#define Leftcenter        1500     // when RC inputs are centered then input should be 1.5mS
-#define Rightcenter       1500     // when RC inputs are centered then input should be 1.5mS
-#define RCdeadband          35     // inputs do not have to be perfectly centered to stop motors
-#define scale               12     // scale factor for RC signal to PWM
+#define RCMIX                1     // Set to 1 if L/R and F/R signals from RC need to be mixed
+#define RCLEFTCENTER      1500     // when RC inputs are centered then input should be 1.5mS
+#define RCRIGHTCENTER     1500     // when RC inputs are centered then input should be 1.5mS
+#define RCDEADBAND          35     // inputs do not have to be perfectly centered to stop motors
+#define RCSCALE             12     // scale factor for RC signal to PWM
 
 // BATTERY CHARGER SETTINGS
-#define batvolt            487     // This is the nominal battery voltage reading. Peak charge can only occur above this voltage.
-#define lowvolt            400     // This is the voltage at which the speed controller goes into recharge mode.
-#define chargetimeout   300000     // If the battery voltage does not change in this number of milliseconds then stop charging.
-#define reportInterval   30000     // How often to report battery status during charging
+#define BATVOLT            487     // This is the nominal battery voltage reading. Peak charge can only occur above this voltage.
+#define LOWVOLT            400     // This is the voltage at which the speed controller goes into recharge mode.
+#define CHARGETIMEOUT   300000     // If the battery voltage does not change in this number of milliseconds then stop charging.
 
 // H BRIDGE SETTINGS
 #define Leftmaxamps        800     // set overload current for left motor
