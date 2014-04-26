@@ -132,7 +132,7 @@ void loop() {
   }
 
   // check condition of the battery
-  if ((Volts<LOWVOLT) && (isCharged == 1)) {
+  if ((Volts < LOWVOLT) && (isCharged == 1)) {
     // change battery status from charged to flat
     //
     // FLAT BATTERY speed controller shuts down until battery is recharged
@@ -154,13 +154,19 @@ void loop() {
     // Record start time
     chargeStart = millis();
 
-    reportDeadBattery();
+    // Disable motors and reset modes for when we resume
+    leftPWM = 0;
+    leftMode = BRAKE;
+    rightPWM = 0;
+    rightMode = BRAKE;
 
     // Enable current regulator to charge battery
     digitalWrite(Charger,0);
+
+    reportDeadBattery();
   }
 
-  if ((isCharged == 0) && (Volts-startVolts>67)) {
+  if ((isCharged == 0) && (Volts - startVolts > UNITSPERVOLT)) {
     //
     // CHARGE BATTERY
     //
@@ -214,21 +220,25 @@ void loop() {
     //
     // Code to drive dual "H" bridges
     //
-
-    if (isCharged == 1) { // Only power motors if battery voltage is good
+    if (isCharged == 1) {
+      // Only power motors if battery voltage is good
       if ((millis()-leftoverload)>overloadtime) {
-        switch (leftMode) { // if left motor has not overloaded recently
-          case 2:                                               // left motor forward
+        // if left motor has not overloaded recently
+        switch (leftMode) {
+          // left motor forward
+          case FORWARD:
             analogWrite(LmotorA,0);
             analogWrite(LmotorB,leftPWM);
             break;
 
-          case 1:                                               // left motor brake
+          // left motor brake
+          case BRAKE:
             analogWrite(LmotorA,leftPWM);
             analogWrite(LmotorB,leftPWM);
             break;
 
-          case 0:                                               // left motor reverse
+          // left motor reverse
+          case REVERSE:
             analogWrite(LmotorA,leftPWM);
             analogWrite(LmotorB,0);
             break;
@@ -236,18 +246,22 @@ void loop() {
       }
 
       if ((millis()-rightoverload)>overloadtime) {
-        switch (rightMode) { // if right motor has not overloaded recently
-          case 2:                                               // right motor forward
+        // if right motor has not overloaded recently
+        switch (rightMode) {
+          // right motor forward
+          case FORWARD:
             analogWrite(RmotorA,0);
             analogWrite(RmotorB,rightPWM);
             break;
 
-          case 1:                                               // right motor brake
+          // right motor brake
+          case BRAKE:
             analogWrite(RmotorA,rightPWM);
             analogWrite(RmotorB,rightPWM);
             break;
 
-          case 0:                                               // right motor reverse
+          // right motor reverse
+          case REVERSE:
             analogWrite(RmotorA,rightPWM);
             analogWrite(RmotorB,0);
             break;
@@ -352,9 +366,9 @@ void SCmode() {
       // Stop
       case ST:
          leftMode = BRAKE;
-         leftPWM = 0;
+         leftPWM = 255;
          rightMode = BRAKE;
-         rightPWM = 0;
+         rightPWM = 255;
          break;
 
       // Check battery level
@@ -433,15 +447,6 @@ void I2Cmode() {
   // Your code goes here
 }
 
-void reportChargeComplete(int chargeTime) {
-  Serial.print("{\"type\":\"chargeReport\"");
-  Serial.print(",\"time\": ");
-  Serial.print(chargeTime);
-  Serial.print(",\"battery\": ");
-  Serial.print(Volts);
-  Serial.println("}");
-}
-
 void reportState() {
   Serial.print("{\"type\":\"state\"");
   Serial.print(",\"isCharged\": ");
@@ -459,8 +464,17 @@ void reportState() {
   Serial.println("}");
 }
 
+void reportChargeComplete(int chargeTime) {
+  Serial.print("{\"type\":\"batteryCharged\"");
+  Serial.print(",\"time\": ");
+  Serial.print(chargeTime);
+  Serial.print(",\"battery\": ");
+  Serial.print(Volts);
+  Serial.println("}");
+}
+
 void reportDeadBattery() {
-  Serial.print("{\"type\":\"deadBattery\"");
+  Serial.print("{\"type\":\"batteryDead\"");
   Serial.print(",\"battery\": ");
   Serial.print(Volts);
   Serial.println("}");

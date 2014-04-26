@@ -12,9 +12,9 @@
 #define ST               21332     // Stop
 
 // MOTION
-#define	FORWARD				2
-#define	BRAKE				1
-#define	REVERSE				0
+#define FORWARD             2
+#define BRAKE               1
+#define REVERSE             0
 
 // RC MODE OPTIONS
 #define RCMIX                1     // Set to 1 if L/R and F/R signals from RC need to be mixed
@@ -24,6 +24,7 @@
 #define RCSCALE             12     // scale factor for RC signal to PWM
 
 // BATTERY CHARGER SETTINGS
+#define UNITSPERVOLT        67     // Units per volt
 #define BATVOLT            487     // This is the nominal battery voltage reading. Peak charge can only occur above this voltage.
 #define LOWVOLT            400     // This is the voltage at which the speed controller goes into recharge mode.
 #define CHARGETIMEOUT   300000     // If the battery voltage does not change in this number of milliseconds then stop charging.
