@@ -8,6 +8,7 @@
 unsigned int Volts;
 unsigned int LeftAmps;
 unsigned int RightAmps;
+unsigned long lastCommandTime;
 unsigned long chargeStart;
 unsigned long chargeTimer;
 unsigned long reportTimer;
@@ -358,18 +359,15 @@ void RCmode() {
 //      right motor mode 0-2
 //      right motor PWM  0-255
 void SCmode() {
-  if (Serial.available()>1) {
+  if (Serial.available() > 1) {
     int A = Serial.read();
     int B = Serial.read();
     int command = A*256+B;
     switch (command) {
       // Stop
       case ST:
-         leftMode = BRAKE;
-         leftPWM = 255;
-         rightMode = BRAKE;
-         rightPWM = 255;
-         break;
+        stop();
+        break;
 
       // Check battery level
       case BT:
@@ -425,12 +423,18 @@ void SCmode() {
          Serialread();
          rightPWM = data;
 
+         lastCommandTime = millis();
          break;
 
        // invalid command
        default:
          Serial.flush();
     }
+  }
+
+  if ((leftMode != BRAKE || rightMode != BRAKE) && millis() - lastCommandTime > COMMANDTIMEOUT) {
+    // Prevent runaway when connection drops
+    stop();
   }
 }
 
@@ -441,6 +445,13 @@ void Serialread() {
   do {
     data = Serial.read();
   } while (data<0);
+}
+
+void stop() {
+  leftMode = BRAKE;
+  leftPWM = 255;
+  rightMode = BRAKE;
+  rightPWM = 255;
 }
 
 void I2Cmode() {

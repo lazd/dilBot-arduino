@@ -11,6 +11,9 @@
 #define BT               16980     // Check battery level
 #define ST               21332     // Stop
 
+// SERIAL
+#define COMMANDTIMEOUT    250     // Stop after this long if no commands received
+
 // MOTION
 #define FORWARD             2
 #define BRAKE               1
