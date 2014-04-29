@@ -12,6 +12,10 @@
 #define BT               16980     // Check battery level
 #define ST               21332     // Stop
 
+// Sensors
+#define PING_LEFT           D0
+#define PING_RIGHT          D1
+
 // SERIAL
 #define COMMANDTIMEOUT    250     // Stop after this long if no commands received
 

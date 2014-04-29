@@ -35,6 +35,9 @@ int leftPWM;
 // PWM value for right motor speed / brake
 int rightPWM;
 
+// Ping distance
+long leftDist, rightDist;
+
 int data;
 
 void setup() {
@@ -163,6 +166,9 @@ void loop() {
   }
 
   else {
+    leftDist = doPing(PING_LEFT);
+    rightDist = doPing(PING_RIGHT);
+
     //
     // GOOD BATTERY speed controller operates normally
     //
@@ -389,6 +395,10 @@ void reportState() {
   Serial.print(rightMode);
   Serial.print(",\"rightPWM\": ");
   Serial.print(rightPWM);
+  Serial.print(",\"leftDist\":");
+  Serial.print(leftDist);
+  Serial.print(",\"rightDist\":");
+  Serial.print(rightDist);
   Serial.println("}");
 }
 
@@ -406,4 +416,33 @@ void reportDeadBattery() {
   Serial.print(",\"battery\": ");
   Serial.print(batteryVoltage);
   Serial.println("}");
+}
+
+long doPing(int pin) {
+  long duration;
+  // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(pin, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(pin, LOW);
+
+  // The same pin is used to read the signal from the PING))): a HIGH
+  // pulse whose duration is the time (in microseconds) from the sending
+  // of the ping to the reception of its echo off of an object.
+  pinMode(pin, INPUT);
+  duration = pulseIn(pin, HIGH);
+
+  // convert the time into centimeters
+  return microsecondsToCentimeters(duration);
+}
+
+// The speed of sound is 340 m/s or 29 microseconds per centimeter.
+// The ping travels out and back, so to find the distance of the
+// object we take half of the distance travelled.
+// See: http://www.parallax.com/dl/docs/prod/acc/28015-PING-v1.3.pdf
+long microsecondsToCentimeters(long microseconds) {
+  return microseconds / 29.0 / 2.0;
 }
