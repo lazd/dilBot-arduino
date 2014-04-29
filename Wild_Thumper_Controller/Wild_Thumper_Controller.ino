@@ -20,6 +20,9 @@ int rightSpeed = 0;
 int Speed;
 int Steer;
 
+// The communication mode
+int commMode = MODE_RC;
+
 // 0 = Flat battery  1 = Charged battery
 byte isCharged = 1;
 
@@ -166,17 +169,7 @@ void loop() {
     // GOOD BATTERY speed controller operates normally
     //
     // @todo does this need to go into the isCharged block?
-    switch(COMM_MODE) {
-      // RC mode via D0 and D1
-      case MODE_RC:
-        RCmode();
-        break;
-
-      // Serial mode via D0(RX) and D1(TX)
-      case MODE_SERIAL:
-        SCmode();
-        break;
-    }
+    SCmode();
 
     //
     // Code to drive dual "H" bridges
@@ -266,6 +259,9 @@ void RCmode() {
   // if Steer input is within deadband set to 1500 (1500uS = center position for most servos)
   if (abs(Steer - RC_CENTER) < RC_DEADBAND) Steer = RC_CENTER;
 
+  // Store last command time
+  lastCommandTime = millis();
+
   if (RC_MIX == 1) {
     // Mixes speed and steering signals
     Steer = Steer - RC_CENTER;
@@ -307,9 +303,9 @@ void RCmode() {
 //
 // Code for Serial Communications
 //
+// ST = Stop
+// MO = Set control mode
 // FL = flush serial buffer
-// AN = report Analog inputs 1-5
-// SV = next 7 integers will be position information for servos 0-6
 // HB = "H" bridge data - next 4 bytes will be:
 //      left  motor mode 0-2
 //      left  motor PWM  0-255
@@ -331,6 +327,13 @@ void SCmode() {
         Serial.flush();
         break;
 
+      // Flush buffer
+      case MO:
+        serialRead();
+        commMode = data;
+
+        break;
+
        // Set mode and PWM data for left and right motors
       case HB:
         serialRead();
@@ -349,6 +352,11 @@ void SCmode() {
        default:
          Serial.flush();
     }
+  }
+
+  if (commMode == MODE_RC) {
+    // Run RC input detection
+    RCmode();
   }
 
   if ((leftMode != BRAKE || rightMode != BRAKE) && (millis() - lastCommandTime > COMMANDTIMEOUT)) {
@@ -376,6 +384,8 @@ void stop() {
 
 void reportState() {
   Serial.print("{\"type\":\"state\"");
+  Serial.print(",\"commMode\": ");
+  Serial.print(commMode);
   Serial.print(",\"isCharged\": ");
   Serial.print(isCharged);
   Serial.print(",\"battery\": ");

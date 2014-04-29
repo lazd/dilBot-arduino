@@ -3,9 +3,6 @@
 #define MODE_RC              0
 #define MODE_SERIAL          1
 
-// COMMUNICATION MODE
-#define COMM_MODE      MODE_RC
-
 // CONTROL CODES
 #define FL               17996     // Flush buffer
 #define AN               16718     // Get analog input vlaues
@@ -13,6 +10,7 @@
 #define HB               18498     // Set H-bridge values
 #define BT               16980     // Check battery level
 #define ST               21332     // Stop
+#define MO               19791     // Change control mode
 
 // SENSORS
 #define PING_LEFT           D0
