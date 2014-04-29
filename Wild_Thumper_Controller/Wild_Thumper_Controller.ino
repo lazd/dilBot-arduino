@@ -51,15 +51,8 @@ void setup() {
   // Disable current regulator to charge battery
   digitalWrite(Charger, 1);
 
-  if (Cmode == 1) {
-    // enable serial communications if Cmode = 1
-    Serial.begin(Brate);
-
-  }
-  else {
-    // Enable regardless for logging
-    Serial.begin(Brate);
-  }
+  // Enable serial regardless
+  Serial.begin(Brate);
 
   Serial.flush();
 
@@ -173,7 +166,7 @@ void loop() {
     // GOOD BATTERY speed controller operates normally
     //
     // @todo does this need to go into the isCharged block?
-    switch(Cmode) {
+    switch(COMM_MODE) {
       // RC mode via D0 and D1
       case MODE_RC:
         RCmode();
@@ -256,26 +249,26 @@ void loop() {
 //
 void RCmode() {
   // read throttle/left stick
-  Speed = pulseIn(RCleft, HIGH, 25000);
+  Speed = pulseIn(RC_LEFT, HIGH, 25000);
 
   // read steering/right stick
-  Steer = pulseIn(RCright, HIGH, 25000);
+  Steer = pulseIn(RC_RIGHT, HIGH, 25000);
 
   // if pulseIn times out (25mS) then set speed to stop
-  if (Speed == 0) Speed = 1500;
+  if (Speed == 0) Speed = RC_CENTER;
 
   // if pulseIn times out (25mS) then set steer to centre
-  if (Steer == 0) Steer = 1500;
+  if (Steer == 0) Steer = RC_CENTER;
 
   // if Speed input is within deadband set to 1500 (1500uS = center position for most servos)
-  if (abs(Speed-1500) < RCDEADBAND) Speed = 1500;
+  if (abs(Speed - RC_CENTER) < RC_DEADBAND) Speed = RC_CENTER;
 
   // if Steer input is within deadband set to 1500 (1500uS = center position for most servos)
-  if (abs(Steer-1500) < RCDEADBAND) Steer = 1500;
+  if (abs(Steer - RC_CENTER) < RC_DEADBAND) Steer = RC_CENTER;
 
-  if (RCMIX == 1) {
+  if (RC_MIX == 1) {
     // Mixes speed and steering signals
-    Steer = Steer - 1500;
+    Steer = Steer - RC_CENTER;
     leftSpeed = Speed + Steer;
     rightSpeed = Speed - Steer;
   }
@@ -289,23 +282,23 @@ void RCmode() {
   rightMode = REVERSE;
 
   // if left input is forward then set left mode to forward
-  if (leftSpeed > (RCLEFTCENTER + RCDEADBAND)) {
+  if (leftSpeed > (RC_CENTER + RC_DEADBAND)) {
     leftMode = FORWARD;
   }
 
   // if right input is forward then set right mode to forward
-  if (rightSpeed > (RCRIGHTCENTER + RCDEADBAND)) {
+  if (rightSpeed > (RC_CENTER + RC_DEADBAND)) {
     rightMode = FORWARD;
   }
 
   // scale 1000-2000uS to 0-255
-  leftPWM = abs(leftSpeed - RCLEFTCENTER) * 10 / RCSCALE;
+  leftPWM = abs(leftSpeed - RC_CENTER) * 10 / RC_SCALE;
 
   // set maximum limit 255
   leftPWM = min(leftPWM, 255);
 
   // scale 1000-2000uS to 0-255
-  rightPWM = abs(rightSpeed - RCRIGHTCENTER) * 10 / RCSCALE;
+  rightPWM = abs(rightSpeed - RC_CENTER) * 10 / RC_SCALE;
 
   // set maximum limit 255
   rightPWM = min(rightPWM, 255);
@@ -340,17 +333,17 @@ void SCmode() {
 
        // Set mode and PWM data for left and right motors
       case HB:
-         serialRead();
-         leftMode = data;
-         serialRead();
-         leftPWM = data;
-         serialRead();
-         rightMode = data;
-         serialRead();
-         rightPWM = data;
+        serialRead();
+        leftMode = data;
+        serialRead();
+        leftPWM = data;
+        serialRead();
+        rightMode = data;
+        serialRead();
+        rightPWM = data;
 
-         lastCommandTime = millis();
-         break;
+        lastCommandTime = millis();
+        break;
 
        // invalid command
        default:

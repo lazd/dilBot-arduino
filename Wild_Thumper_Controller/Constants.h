@@ -1,8 +1,10 @@
-// MODE OF COMMUNICATION
-#define Cmode                1     // Sets communication mode: 0=RC    1=Serial
+// COMMUNICATION
 #define Brate           115200     // Baud rate for serial communications
 #define MODE_RC              0
 #define MODE_SERIAL          1
+
+// COMMUNICATION MODE
+#define COMM_MODE      MODE_RC
 
 // CONTROL CODES
 #define FL               17996     // Flush buffer
@@ -12,24 +14,25 @@
 #define BT               16980     // Check battery level
 #define ST               21332     // Stop
 
-// Sensors
+// SENSORS
 #define PING_LEFT           D0
 #define PING_RIGHT          D1
+#define RC_LEFT             D3
+#define RC_RIGHT            D2
 
 // SERIAL
-#define COMMANDTIMEOUT    250     // Stop after this long if no commands received
+#define COMMANDTIMEOUT     250     // Stop after this long if no commands received
 
 // MOTION
-#define FORWARD             2
-#define BRAKE               1
-#define REVERSE             0
+#define FORWARD              2
+#define BRAKE                1
+#define REVERSE              0
 
 // RC MODE OPTIONS
-#define RCMIX                1     // Set to 1 if L/R and F/R signals from RC need to be mixed
-#define RCLEFTCENTER      1500     // when RC inputs are centered then input should be 1.5mS
-#define RCRIGHTCENTER     1500     // when RC inputs are centered then input should be 1.5mS
-#define RCDEADBAND          35     // inputs do not have to be perfectly centered to stop motors
-#define RCSCALE             12     // scale factor for RC signal to PWM
+#define RC_MIX               1     // Set to 1 if L/R and F/R signals from RC need to be mixed
+#define RC_CENTER         1800     // when RC inputs are centered then input should be 1.5mS
+#define RC_DEADBAND         35     // inputs do not have to be perfectly centered to stop motors
+#define RC_SCALE            12     // scale factor for RC signal to PWM
 
 // BATTERY CHARGER SETTINGS
 #define UNITSPERVOLT        67     // Units per volt

@@ -4,9 +4,8 @@
 #define RmotorA             5  // Right motor H bridge, input A
 #define RmotorB             6  // Right motor H bridge, input B
 
-#define RCleft              0  // Digital input 0
-#define RCright             1  // Digital input 1
-
+// Digital pins 0 and 1 interfere with USB, don't use them
+// Digital pins 2-12 are safe
 #define D0                  2  // Digital output 00
 #define D1                  4  // Digital output 01
 #define D2                  7  // Digital output 02
