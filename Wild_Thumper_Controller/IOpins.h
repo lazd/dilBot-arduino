@@ -7,13 +7,13 @@
 #define RCleft              0  // Digital input 0
 #define RCright             1  // Digital input 1
 
-#define S0                  2  // Servo output 00
-#define S1                  4  // Servo output 01
-#define S2                  7  // Servo output 02
-#define S3                  8  // Servo output 03
-#define S4                  9  // Servo output 04
-#define S5                 10  // Servo output 05
-#define S6                 12  // Servo output 06
+#define D0                  2  // Digital output 00
+#define D1                  4  // Digital output 01
+#define D2                  7  // Digital output 02
+#define D3                  8  // Digital output 03
+#define D4                  9  // Digital output 04
+#define D5                 10  // Digital output 05
+#define D6                 12  // Digital output 06
 
 #define Battery             0  // Analog input 00
 #define RmotorC             6  // Analog input 06
