@@ -64,7 +64,7 @@ void setup() {
   Serial.flush();
 
   // Say hi
-  Serial.println("{\"type\":\"hello\"}");
+  Serial.println("{\"type\":\"log\",\"message\":\"Hello from dilBot!\"}");
 }
 
 
