@@ -432,7 +432,7 @@ void SCmode() {
     }
   }
 
-  if ((leftMode != BRAKE || rightMode != BRAKE) && millis() - lastCommandTime > COMMANDTIMEOUT) {
+  if ((leftMode != BRAKE || rightMode != BRAKE) && (millis() - lastCommandTime > COMMANDTIMEOUT)) {
     // Prevent runaway when connection drops
     stop();
   }
@@ -447,6 +447,7 @@ void Serialread() {
   } while (data<0);
 }
 
+// Stop by applying brakes
 void stop() {
   leftMode = BRAKE;
   leftPWM = 255;
