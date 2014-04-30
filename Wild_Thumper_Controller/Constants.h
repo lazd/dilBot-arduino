@@ -5,12 +5,10 @@
 
 // CONTROL CODES
 #define FL               17996     // Flush buffer
-#define AN               16718     // Get analog input vlaues
-#define SV               21334     // Get servo positions
 #define HB               18498     // Set H-bridge values
-#define BT               16980     // Check battery level
 #define ST               21332     // Stop
 #define MO               19791     // Change control mode
+#define CH               17224     // Enter charge mode
 
 // SENSORS
 #define PING_LEFT           D0

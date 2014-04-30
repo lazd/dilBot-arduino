@@ -54,12 +54,12 @@ void setup() {
   // Disable current regulator to charge battery
   digitalWrite(Charger, 1);
 
-  // Enable serial regardless
+  // Enable serial
   Serial.begin(Brate);
-
   Serial.flush();
 
   // Say hi
+  Serial.println("{\"type\":\"ready\"}");
   Serial.println("{\"type\":\"log\",\"message\":\"Hello from dilBot!\"}");
 }
 
@@ -305,7 +305,8 @@ void RCmode() {
 //
 // ST = Stop
 // MO = Set control mode
-// FL = flush serial buffer
+// FL = Flush serial buffer
+// CH = Enter charge mode
 // HB = "H" bridge data - next 4 bytes will be:
 //      left  motor mode 0-2
 //      left  motor PWM  0-255
@@ -325,6 +326,11 @@ void SCmode() {
       // Flush buffer
       case FL:
         Serial.flush();
+        break;
+
+      // Enter charge mode
+      case CH:
+        isCharged = 0;
         break;
 
       // Flush buffer
