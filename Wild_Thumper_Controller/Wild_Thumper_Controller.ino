@@ -411,7 +411,7 @@ void reportState() {
   Serial.println("}");
 }
 
-void reportChargeComplete(int chargeTime) {
+void reportChargeComplete(long chargeTime) {
   Serial.print("{\"type\":\"batteryCharged\"");
   Serial.print(",\"time\": ");
   Serial.print(chargeTime);
@@ -429,6 +429,7 @@ void reportDeadBattery() {
 
 long doPing(int pin) {
   long duration;
+
   // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
   // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
   pinMode(pin, OUTPUT);
