@@ -14,6 +14,9 @@
 #define D5                 10  // Digital output 05
 #define D6                 12  // Digital output 06
 
+#define D18                18  // D18 for enabling pullup resistors
+#define D19                19  // D19 for enabling pullup resistors
+
 #define Battery             0  // Analog input 00
 #define RmotorC             6  // Analog input 06
 #define LmotorC             7  // Analog input 07

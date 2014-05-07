@@ -1,9 +1,9 @@
 #include "IOpins.h"
 #include "Constants.h"
+#include <Wire.h>
+#include <LSM303.h>
 
-//
-// define global variables
-//
+// Globals
 unsigned int batteryVoltage;
 unsigned int LeftAmps;
 unsigned int RightAmps;
@@ -41,6 +41,10 @@ int rightPWM;
 // Ping distance
 long leftDist, rightDist;
 
+// Compass and heading
+LSM303 compass;
+float heading;
+
 int data;
 
 void setup() {
@@ -54,9 +58,25 @@ void setup() {
   // Disable current regulator to charge battery
   digitalWrite(Charger, 1);
 
+  // Enable pullups to put A4 and A5 into I2C mode
+  digitalWrite(D18, 1);
+  digitalWrite(D19, 1);
+
+  // Start the compass
+  Wire.begin();
+  compass.init();
+  compass.enableDefault();
+
+  // Compass calibration
+  compass.m_min = (LSM303::vector<int16_t>){-32767, -32767, -32767};
+  compass.m_max = (LSM303::vector<int16_t>){+32767, +32767, +32767};
+
   // Enable serial
   Serial.begin(Brate);
   Serial.flush();
+
+  // Print a newline so the next command isn't garbled
+  Serial.println("");
 
   // Say hi
   Serial.println("{\"type\":\"ready\"}");
@@ -164,6 +184,19 @@ void loop() {
   else {
     leftDist = doPing(PING_LEFT);
     rightDist = doPing(PING_RIGHT);
+
+    // Get the current heading
+    compass.read();
+    // heading = compass.heading();
+    heading = compass.heading((LSM303::vector<int>){-1, 0, 0});
+
+    // heading = compass.heading((LSM303::vector<int>){0, 0, 1});
+    // heading = compass.heading((LSM303::vector<int>){0, 0, -1});
+    // heading = compass.heading((LSM303::vector<int>){0, 1, 0});
+    // heading = compass.heading((LSM303::vector<int>){0, -1, 0});
+    // heading = compass.heading((LSM303::vector<int>){1, 0, 0});
+    // heading = compass.heading((LSM303::vector<int>){-1, 0, 0});
+    // heading = compass.heading((LSM303::vector<int>){-1, 0, -1});
 
     //
     // GOOD BATTERY speed controller operates normally
@@ -390,6 +423,8 @@ void stop() {
 
 void reportState() {
   Serial.print("{\"type\":\"state\"");
+  Serial.print(",\"heading\":");
+  Serial.print(heading);
   Serial.print(",\"commMode\": ");
   Serial.print(commMode);
   Serial.print(",\"isCharged\": ");
