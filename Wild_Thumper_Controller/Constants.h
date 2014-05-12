@@ -11,10 +11,11 @@
 #define CH               17224     // Enter charge mode
 
 // SENSORS
-#define PING_LEFT           D0
-#define PING_RIGHT          D1
-#define RC_LEFT             D3
-#define RC_RIGHT            D2
+#define PING_LEFT           D2
+#define PING_CENTER         D4
+#define PING_RIGHT          D7
+#define RC_LEFT             D12
+#define RC_RIGHT            D10
 
 // SERIAL
 #define COMMANDTIMEOUT     250     // Stop after this long if no commands received

@@ -39,7 +39,7 @@ int leftPWM;
 int rightPWM;
 
 // Ping distance
-long leftDist, rightDist;
+long leftDist, centerDist, rightDist;
 
 // Compass and heading
 LSM303 compass;
@@ -67,9 +67,9 @@ void setup() {
   compass.init();
   compass.enableDefault();
 
-  // Compass calibration
-  compass.m_min = (LSM303::vector<int16_t>){-32767, -32767, -32767};
-  compass.m_max = (LSM303::vector<int16_t>){+32767, +32767, +32767};
+  // Compass calibration - Above driver upside down
+  compass.m_min = (LSM303::vector<int16_t>){-7865, -4027, +803};
+  compass.m_max = (LSM303::vector<int16_t>){-1676, +1536, +6193};
 
   // Enable serial
   Serial.begin(Brate);
@@ -183,20 +183,12 @@ void loop() {
 
   else {
     leftDist = doPing(PING_LEFT);
+    centerDist = doPing(PING_CENTER);
     rightDist = doPing(PING_RIGHT);
 
     // Get the current heading
     compass.read();
-    // heading = compass.heading();
-    heading = compass.heading((LSM303::vector<int>){-1, 0, 0});
-
-    // heading = compass.heading((LSM303::vector<int>){0, 0, 1});
-    // heading = compass.heading((LSM303::vector<int>){0, 0, -1});
-    // heading = compass.heading((LSM303::vector<int>){0, 1, 0});
-    // heading = compass.heading((LSM303::vector<int>){0, -1, 0});
-    // heading = compass.heading((LSM303::vector<int>){1, 0, 0});
-    // heading = compass.heading((LSM303::vector<int>){-1, 0, 0});
-    // heading = compass.heading((LSM303::vector<int>){-1, 0, -1});
+    heading = compass.heading();
 
     //
     // GOOD BATTERY speed controller operates normally
@@ -307,30 +299,44 @@ void RCmode() {
     rightSpeed = Steer;
   }
 
-  leftMode = REVERSE;
-  rightMode = REVERSE;
-
-  // if left input is forward then set left mode to forward
-  if (leftSpeed > (RC_CENTER + RC_DEADBAND)) {
-    leftMode = FORWARD;
+  if (
+    rightSpeed > (RC_CENTER - RC_DEADBAND) && rightSpeed < (RC_CENTER + RC_DEADBAND) &&
+    leftSpeed > (RC_CENTER - RC_DEADBAND) && leftSpeed < (RC_CENTER + RC_DEADBAND)
+  ) {
+    // Stick is in deadband, robot should stop
+    stop();
   }
+  else {
+    if (leftSpeed > (RC_CENTER + RC_DEADBAND)) {
+      // Stick is forward
+      leftMode = FORWARD;
+    }
+    else {
+      // Stick is reversed
+      leftMode = REVERSE;
+    }
 
-  // if right input is forward then set right mode to forward
-  if (rightSpeed > (RC_CENTER + RC_DEADBAND)) {
-    rightMode = FORWARD;
+    if (rightSpeed > (RC_CENTER + RC_DEADBAND)) {
+      // Stick is forward
+      rightMode = FORWARD;
+    }
+    else {
+      // Stick is reversed
+      rightMode = REVERSE;
+    }
+
+    // scale 1000-2000uS to 0-255
+    leftPWM = abs(leftSpeed - RC_CENTER) * 10 / RC_SCALE;
+
+    // set maximum limit 255
+    leftPWM = min(leftPWM, 255);
+
+    // scale 1000-2000uS to 0-255
+    rightPWM = abs(rightSpeed - RC_CENTER) * 10 / RC_SCALE;
+
+    // set maximum limit 255
+    rightPWM = min(rightPWM, 255);
   }
-
-  // scale 1000-2000uS to 0-255
-  leftPWM = abs(leftSpeed - RC_CENTER) * 10 / RC_SCALE;
-
-  // set maximum limit 255
-  leftPWM = min(leftPWM, 255);
-
-  // scale 1000-2000uS to 0-255
-  rightPWM = abs(rightSpeed - RC_CENTER) * 10 / RC_SCALE;
-
-  // set maximum limit 255
-  rightPWM = min(rightPWM, 255);
 }
 
 //
@@ -356,17 +362,12 @@ void SCmode() {
         stop();
         break;
 
-      // Flush buffer
-      case FL:
-        Serial.flush();
-        break;
-
       // Enter charge mode
       case CH:
         isCharged = 0;
         break;
 
-      // Flush buffer
+      // Change mode
       case MO:
         serialRead();
         commMode = data;
@@ -425,6 +426,12 @@ void reportState() {
   Serial.print("{\"type\":\"state\"");
   Serial.print(",\"heading\":");
   Serial.print(heading);
+  Serial.print(",\"leftDist\":");
+  Serial.print(leftDist);
+  Serial.print(",\"centerDist\":");
+  Serial.print(centerDist);
+  Serial.print(",\"rightDist\":");
+  Serial.print(rightDist);
   Serial.print(",\"commMode\": ");
   Serial.print(commMode);
   Serial.print(",\"isCharged\": ");
@@ -439,10 +446,6 @@ void reportState() {
   Serial.print(rightMode);
   Serial.print(",\"rightPWM\": ");
   Serial.print(rightPWM);
-  Serial.print(",\"leftDist\":");
-  Serial.print(leftDist);
-  Serial.print(",\"rightDist\":");
-  Serial.print(rightDist);
   Serial.println("}");
 }
 

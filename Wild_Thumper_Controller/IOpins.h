@@ -6,13 +6,13 @@
 
 // Digital pins 0 and 1 interfere with USB, don't use them
 // Digital pins 2-12 are safe
-#define D0                  2  // Digital output 00
-#define D1                  4  // Digital output 01
-#define D2                  7  // Digital output 02
-#define D3                  8  // Digital output 03
-#define D4                  9  // Digital output 04
-#define D5                 10  // Digital output 05
-#define D6                 12  // Digital output 06
+#define D2                 2   // Digital output 00
+#define D4                 4   // Digital output 01
+#define D7                 7   // Digital output 02
+#define D8                 8   // Digital output 03
+#define D9                 9   // Digital output 04
+#define D10                10  // Digital output 05
+#define D12                12  // Digital output 06
 
 #define D18                18  // D18 for enabling pullup resistors
 #define D19                19  // D19 for enabling pullup resistors
