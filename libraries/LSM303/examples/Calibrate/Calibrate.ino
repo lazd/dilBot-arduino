@@ -8,6 +8,11 @@ char report[80];
 
 void setup() {
   Serial.begin(9600);
+
+  // Enable pullups to put A4 and A5 into I2C mode
+  digitalWrite(18, 1);
+  digitalWrite(19, 1);
+
   Wire.begin();
   compass.init();
   compass.enableDefault();
