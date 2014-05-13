@@ -38,6 +38,6 @@
 #define CHARGETIMEOUT   300000     // If the battery voltage does not change in this number of milliseconds then stop charging.
 
 // H BRIDGE SETTINGS
-#define Leftmaxamps        800     // set overload current for left motor
-#define Rightmaxamps       800     // set overload current for right motor
-#define overloadtime       100     // time in mS before motor is re-enabled after overload occurs
+#define LEFTMAXAMPS        800     // set overload current for left motor
+#define RIGHTMAXAMPS       800     // set overload current for right motor
+#define OVERLOADTIME       100     // time in mS before motor is re-enabled after overload occurs

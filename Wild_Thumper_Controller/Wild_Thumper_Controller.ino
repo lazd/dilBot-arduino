@@ -98,7 +98,7 @@ void loop() {
   // read right motor current draw
   RightAmps = analogRead(RmotorC);
 
-  if (LeftAmps>Leftmaxamps) { // is motor current draw exceeding safe limit
+  if (LeftAmps > LEFTMAXAMPS) { // is motor current draw exceeding safe limit
     // Turn off motors
     analogWrite(LmotorA, 0);
     analogWrite(LmotorB, 0);
@@ -107,7 +107,7 @@ void loop() {
     leftoverload = millis();
   }
 
-  if (RightAmps>Rightmaxamps) { // is motor current draw exceeding safe limit
+  if (RightAmps > RIGHTMAXAMPS) { // is motor current draw exceeding safe limit
     // Turn off motors
     analogWrite(RmotorA, 0);
     analogWrite(RmotorB, 0);
@@ -118,7 +118,6 @@ void loop() {
 
   // check condition of the battery
   if ((batteryVoltage < LOWVOLT) && (isCharged == 1)) {
-    // change battery status from charged to flat
     //
     // FLAT BATTERY speed controller shuts down until battery is recharged
     //
@@ -126,29 +125,7 @@ void loop() {
     // This is a safety feature to prevent malfunction at low voltages!!
     //
 
-    // Battery is flat
-    isCharged = 0;
-
-    // Record the voltage
-    highVolts = batteryVoltage;
-    startVolts = batteryVoltage;
-
-    // Record the time
-    chargeTimer = millis();
-
-    // Record start time
-    chargeStart = millis();
-
-    // Disable motors and reset modes for when we resume
-    leftPWM = 0;
-    leftMode = BRAKE;
-    rightPWM = 0;
-    rightMode = BRAKE;
-
-    // Enable current regulator to charge battery
-    digitalWrite(Charger,0);
-
-    reportDeadBattery();
+    startCharge();
   }
 
   if ((isCharged == 0) && (batteryVoltage - startVolts > UNITSPERVOLT)) {
@@ -201,7 +178,7 @@ void loop() {
     //
     if (isCharged == 1) {
       // Only power motors if battery voltage is good
-      if ((millis() - leftoverload) > overloadtime) {
+      if ((millis() - leftoverload) > OVERLOADTIME) {
         // if left motor has not overloaded recently
         switch (leftMode) {
           // left motor forward
@@ -224,7 +201,7 @@ void loop() {
         }
       }
 
-      if ((millis() - rightoverload) > overloadtime) {
+      if ((millis() - rightoverload) > OVERLOADTIME) {
         // if right motor has not overloaded recently
         switch (rightMode) {
           // right motor forward
@@ -249,11 +226,7 @@ void loop() {
     }
     else {
       // Battery is flat
-      // Turn off motors
-      analogWrite(LmotorA, 0);
-      analogWrite(LmotorB, 0);
-      analogWrite(RmotorA, 0);
-      analogWrite(RmotorB, 0);
+      turnOffMotors();
     }
   }
 
@@ -364,7 +337,7 @@ void SCmode() {
 
       // Enter charge mode
       case CH:
-        isCharged = 0;
+        startCharge();
         break;
 
       // Change mode
@@ -394,14 +367,16 @@ void SCmode() {
     }
   }
 
-  if (commMode == MODE_RC) {
-    // Run RC input detection
-    RCmode();
-  }
+  if (isCharged == 1) {
+    if (commMode == MODE_RC) {
+      // Run RC input detection
+      RCmode();
+    }
 
-  if ((leftMode != BRAKE || rightMode != BRAKE) && (millis() - lastCommandTime > COMMANDTIMEOUT)) {
-    // Prevent runaway when connection drops
-    stop();
+    if ((leftMode != BRAKE || rightMode != BRAKE) && (millis() - lastCommandTime > COMMANDTIMEOUT)) {
+      // Prevent runaway when connection drops
+      stop();
+    }
   }
 }
 
@@ -493,4 +468,40 @@ long doPing(int pin) {
 // See: http://www.parallax.com/dl/docs/prod/acc/28015-PING-v1.3.pdf
 long microsecondsToCentimeters(long microseconds) {
   return microseconds / 29.0 / 2.0;
+}
+
+void turnOffMotors() {
+  // Turn off motors
+  analogWrite(LmotorA, 0);
+  analogWrite(LmotorB, 0);
+  analogWrite(RmotorA, 0);
+  analogWrite(RmotorB, 0);
+}
+
+void startCharge() {
+  turnOffMotors();
+
+  // Change battery status from charged to flat
+  isCharged = 0;
+
+  // Record the voltage
+  highVolts = batteryVoltage;
+  startVolts = batteryVoltage;
+
+  // Record the time
+  chargeTimer = millis();
+
+  // Record start time
+  chargeStart = millis();
+
+  // Disable motors and reset modes for when we resume
+  leftPWM = 0;
+  leftMode = BRAKE;
+  rightPWM = 0;
+  rightMode = BRAKE;
+
+  // Enable current regulator to charge battery
+  digitalWrite(Charger,0);
+
+  reportDeadBattery();
 }
