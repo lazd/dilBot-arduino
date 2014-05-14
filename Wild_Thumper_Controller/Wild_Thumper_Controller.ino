@@ -68,8 +68,12 @@ void setup() {
   compass.enableDefault();
 
   // Compass calibration - Above driver upside down
-  compass.m_min = (LSM303::vector<int16_t>){-7865, -4027, +803};
-  compass.m_max = (LSM303::vector<int16_t>){-1676, +1536, +6193};
+  // compass.m_min = (LSM303::vector<int16_t>){-7865, -4027, +803};
+  // compass.m_max = (LSM303::vector<int16_t>){-1676, +1536, +6193};
+
+  // Compass calibration - on top of GPS, right side up
+  compass.m_min = (LSM303::vector<int16_t>){-692, +1367, +1324};
+  compass.m_max = (LSM303::vector<int16_t>){+4617, +6327, +6694};
 
   // Enable serial
   Serial.begin(Brate);
