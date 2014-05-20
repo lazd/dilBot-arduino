@@ -1,8 +1,7 @@
-
-#define LmotorA             3  // Left  motor H bridge, input A
-#define LmotorB            11  // Left  motor H bridge, input B
-#define RmotorA             5  // Right motor H bridge, input A
-#define RmotorB             6  // Right motor H bridge, input B
+#define PIN_MOTOR_LEFT_A    3  // Left  motor H bridge, input A
+#define PIN_MOTOR_LEFT_B    11 // Left  motor H bridge, input B
+#define PIN_MOTOR_RIGHT_A   5  // Right motor H bridge, input A
+#define PIN_MOTOR_RIGHT_B   6  // Right motor H bridge, input B
 
 // Digital pins 0 and 1 interfere with USB, don't use them
 // Digital pins 2-12 are safe
@@ -17,7 +16,7 @@
 #define D18                18  // D18 for enabling pullup resistors
 #define D19                19  // D19 for enabling pullup resistors
 
-#define Battery             0  // Analog input 00
-#define RmotorC             6  // Analog input 06
-#define LmotorC             7  // Analog input 07
-#define Charger            13  // Low=ON High=OFF
+#define PIN_BATTERY                 0  // Analog input 00
+#define PIN_MOTOR_RIGHT_CURRENT     6  // Analog input 06
+#define PIN_MOTOR_LEFT_CURRENT      7  // Analog input 07
+#define PIN_CHARGER                 13 // Low=ON High=OFF

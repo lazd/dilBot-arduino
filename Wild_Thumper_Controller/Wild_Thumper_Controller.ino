@@ -5,11 +5,9 @@
 
 // Globals
 unsigned int batteryVoltage;
-unsigned int LeftAmps;
-unsigned int RightAmps;
+unsigned int leftAmps;
+unsigned int rightAmps;
 unsigned long lastCommandTime;
-unsigned long chargeStart;
-unsigned long chargeTimer;
 unsigned long reportTimer;
 unsigned long leftoverload;
 unsigned long rightoverload;
@@ -20,11 +18,11 @@ int rightSpeed = 0;
 int Speed;
 int Steer;
 
+// Whether the battery is dead
+unsigned int batteryDead = 0;
+
 // The communication mode
 int commMode = MODE_RC;
-
-// 0 = Flat battery  1 = Charged battery
-byte isCharged = 1;
 
 // 0 = reverse, 1 = brake, 2 = forward
 int leftMode = 1;
@@ -45,18 +43,16 @@ long leftDist, centerDist, rightDist;
 LSM303 compass;
 float heading;
 
+// Serial data
 int data;
 
 void setup() {
-  //
   // Initialize I/O pins
-  //
 
   // Change charger pin to output
-  pinMode(Charger, OUTPUT);
-
-  // Disable current regulator to charge battery
-  digitalWrite(Charger, 1);
+  // Disable current regulator
+  pinMode(PIN_CHARGER, OUTPUT);
+  digitalWrite(PIN_CHARGER, 1);
 
   // Enable pullups to put A4 and A5 into I2C mode
   digitalWrite(D18, 1);
@@ -67,16 +63,12 @@ void setup() {
   compass.init();
   compass.enableDefault();
 
-  // Compass calibration - Above driver upside down
-  // compass.m_min = (LSM303::vector<int16_t>){-7865, -4027, +803};
-  // compass.m_max = (LSM303::vector<int16_t>){-1676, +1536, +6193};
-
-  // Compass calibration - on top of GPS, right side up
-  compass.m_min = (LSM303::vector<int16_t>){-692, +1367, +1324};
-  compass.m_max = (LSM303::vector<int16_t>){+4617, +6327, +6694};
+  // Compass calibration - in box, wire tied
+  compass.m_min = (LSM303::vector<int16_t>){+717, -8921, -1185};
+  compass.m_max = (LSM303::vector<int16_t>){+6771, -2171, +4772};
 
   // Enable serial
-  Serial.begin(Brate);
+  Serial.begin(BAUDRATE);
   Serial.flush();
 
   // Print a newline so the next command isn't garbled
@@ -89,80 +81,96 @@ void setup() {
 
 
 void loop() {
-  //
   // Check battery voltage and current draw of motors
-  //
 
-  // read the battery voltage
-  batteryVoltage = analogRead(Battery);
+  // Read the battery voltage
+  batteryVoltage = analogRead(PIN_BATTERY);
 
-  // read left motor current draw
-  LeftAmps = analogRead(LmotorC);
+  // Read left motor current draw
+  leftAmps = analogRead(PIN_MOTOR_LEFT_CURRENT);
 
-  // read right motor current draw
-  RightAmps = analogRead(RmotorC);
+  // Read right motor current draw
+  rightAmps = analogRead(PIN_MOTOR_RIGHT_CURRENT);
 
-  if (LeftAmps > LEFTMAXAMPS) { // is motor current draw exceeding safe limit
+  if (leftAmps > LEFTMAXAMPS) { // is motor current draw exceeding safe limit
     // Turn off motors
-    analogWrite(LmotorA, 0);
-    analogWrite(LmotorB, 0);
+    analogWrite(PIN_MOTOR_LEFT_A, 0);
+    analogWrite(PIN_MOTOR_LEFT_B, 0);
 
     // Record time of overload
     leftoverload = millis();
   }
 
-  if (RightAmps > RIGHTMAXAMPS) { // is motor current draw exceeding safe limit
+  if (rightAmps > RIGHTMAXAMPS) { // is motor current draw exceeding safe limit
     // Turn off motors
-    analogWrite(RmotorA, 0);
-    analogWrite(RmotorB, 0);
+    analogWrite(PIN_MOTOR_RIGHT_A, 0);
+    analogWrite(PIN_MOTOR_RIGHT_B, 0);
 
     // Record time of overload
     rightoverload = millis();
   }
 
-  // check condition of the battery
-  if ((batteryVoltage < LOWVOLT) && (isCharged == 1)) {
-    //
-    // FLAT BATTERY speed controller shuts down until battery is recharged
-    //
-    //
-    // This is a safety feature to prevent malfunction at low voltages!!
-    //
-
-    startCharge();
+  // Check if battery is dead
+  // This is a safety feature to prevent malfunction at low voltages
+  if (batteryVoltage < LOWVOLT) {
+    batteryDead = 1;
+    turnOffMotors();
+    reportDeadBattery();
   }
 
-  if ((isCharged == 0) && (batteryVoltage - startVolts > UNITSPERVOLT)) {
-    //
-    // CHARGE BATTERY
-    //
-    // if battery is flat and charger has been connected (voltage has increased by at least 1V)
+  // Always read from serial
+  SCmode();
 
-    // has battery voltage increased?
-    if (batteryVoltage > highVolts) {
-      // record the highest voltage. Used to detect peak charging.
-      highVolts = batteryVoltage;
+  if (!batteryDead) {
+    // Only power motors if battery voltage is good
+    // Drive dual "H" bridges
+    if ((millis() - leftoverload) > OVERLOADTIME) {
+      // if left motor has not overloaded recently
+      switch (leftMode) {
+        // left motor forward
+        case FORWARD:
+          analogWrite(PIN_MOTOR_LEFT_A, 0);
+          analogWrite(PIN_MOTOR_LEFT_B, leftPWM);
+          break;
 
-      // when voltage increases record the time
-      chargeTimer = millis();
-    }
+        // left motor brake
+        case BRAKE:
+          analogWrite(PIN_MOTOR_LEFT_A, leftPWM);
+          analogWrite(PIN_MOTOR_LEFT_B, leftPWM);
+          break;
 
-    // battery voltage must be higher than this before peak charging can occur.
-    if (batteryVoltage > BATVOLT) {
-      // has voltage begun to drop or levelled out?
-      if ((highVolts - batteryVoltage) > 5 || (millis() - chargeTimer) > CHARGETIMEOUT) {
-        // battery voltage has peaked
-        isCharged = 1;
-
-        // turn off current regulator
-        digitalWrite(Charger, 1);
-
-        reportChargeComplete(millis() - chargeStart);
+        // left motor reverse
+        case REVERSE:
+          analogWrite(PIN_MOTOR_LEFT_A, leftPWM);
+          analogWrite(PIN_MOTOR_LEFT_B, 0);
+          break;
       }
     }
-  }
 
-  else {
+    if ((millis() - rightoverload) > OVERLOADTIME) {
+      // if right motor has not overloaded recently
+      switch (rightMode) {
+        // right motor forward
+        case FORWARD:
+          analogWrite(PIN_MOTOR_RIGHT_A, 0);
+          analogWrite(PIN_MOTOR_RIGHT_B, rightPWM);
+          break;
+
+        // right motor brake
+        case BRAKE:
+          analogWrite(PIN_MOTOR_RIGHT_A, rightPWM);
+          analogWrite(PIN_MOTOR_RIGHT_B, rightPWM);
+          break;
+
+        // right motor reverse
+        case REVERSE:
+          analogWrite(PIN_MOTOR_RIGHT_A, rightPWM);
+          analogWrite(PIN_MOTOR_RIGHT_B, 0);
+          break;
+      }
+    }
+
+    // Read distances
     leftDist = doPing(PING_LEFT);
     centerDist = doPing(PING_CENTER);
     rightDist = doPing(PING_RIGHT);
@@ -170,68 +178,6 @@ void loop() {
     // Get the current heading
     compass.read();
     heading = compass.heading();
-
-    //
-    // GOOD BATTERY speed controller operates normally
-    //
-    // @todo does this need to go into the isCharged block?
-    SCmode();
-
-    //
-    // Code to drive dual "H" bridges
-    //
-    if (isCharged == 1) {
-      // Only power motors if battery voltage is good
-      if ((millis() - leftoverload) > OVERLOADTIME) {
-        // if left motor has not overloaded recently
-        switch (leftMode) {
-          // left motor forward
-          case FORWARD:
-            analogWrite(LmotorA, 0);
-            analogWrite(LmotorB, leftPWM);
-            break;
-
-          // left motor brake
-          case BRAKE:
-            analogWrite(LmotorA, leftPWM);
-            analogWrite(LmotorB, leftPWM);
-            break;
-
-          // left motor reverse
-          case REVERSE:
-            analogWrite(LmotorA, leftPWM);
-            analogWrite(LmotorB, 0);
-            break;
-        }
-      }
-
-      if ((millis() - rightoverload) > OVERLOADTIME) {
-        // if right motor has not overloaded recently
-        switch (rightMode) {
-          // right motor forward
-          case FORWARD:
-            analogWrite(RmotorA, 0);
-            analogWrite(RmotorB, rightPWM);
-            break;
-
-          // right motor brake
-          case BRAKE:
-            analogWrite(RmotorA, rightPWM);
-            analogWrite(RmotorB, rightPWM);
-            break;
-
-          // right motor reverse
-          case REVERSE:
-            analogWrite(RmotorA, rightPWM);
-            analogWrite(RmotorB, 0);
-            break;
-        }
-      }
-    }
-    else {
-      // Battery is flat
-      turnOffMotors();
-    }
   }
 
   // Send report
@@ -321,8 +267,6 @@ void RCmode() {
 //
 // ST = Stop
 // MO = Set control mode
-// FL = Flush serial buffer
-// CH = Enter charge mode
 // HB = "H" bridge data - next 4 bytes will be:
 //      left  motor mode 0-2
 //      left  motor PWM  0-255
@@ -337,11 +281,6 @@ void SCmode() {
       // Stop
       case ST:
         stop();
-        break;
-
-      // Enter charge mode
-      case CH:
-        startCharge();
         break;
 
       // Change mode
@@ -371,16 +310,13 @@ void SCmode() {
     }
   }
 
-  if (isCharged == 1) {
-    if (commMode == MODE_RC) {
-      // Run RC input detection
-      RCmode();
-    }
-
-    if ((leftMode != BRAKE || rightMode != BRAKE) && (millis() - lastCommandTime > COMMANDTIMEOUT)) {
-      // Prevent runaway when connection drops
-      stop();
-    }
+  if (commMode == MODE_RC) {
+    // Run RC input detection
+    RCmode();
+  }
+  else if (commMode == MODE_SERIAL && (leftMode != BRAKE || rightMode != BRAKE) && (millis() - lastCommandTime > COMMANDTIMEOUT)) {
+    // Prevent runaway when connection drops
+    stop();
   }
 }
 
@@ -413,10 +349,10 @@ void reportState() {
   Serial.print(rightDist);
   Serial.print(",\"commMode\": ");
   Serial.print(commMode);
-  Serial.print(",\"isCharged\": ");
-  Serial.print(isCharged);
   Serial.print(",\"battery\": ");
   Serial.print(batteryVoltage);
+  Serial.print(",\"batteryDead\": ");
+  Serial.print(batteryDead);
   Serial.print(",\"leftMode\": ");
   Serial.print(leftMode);
   Serial.print(",\"leftPWM\": ");
@@ -425,15 +361,6 @@ void reportState() {
   Serial.print(rightMode);
   Serial.print(",\"rightPWM\": ");
   Serial.print(rightPWM);
-  Serial.println("}");
-}
-
-void reportChargeComplete(long chargeTime) {
-  Serial.print("{\"type\":\"batteryCharged\"");
-  Serial.print(",\"time\": ");
-  Serial.print(chargeTime);
-  Serial.print(",\"battery\": ");
-  Serial.print(batteryVoltage);
   Serial.println("}");
 }
 
@@ -475,37 +402,15 @@ long microsecondsToCentimeters(long microseconds) {
 }
 
 void turnOffMotors() {
-  // Turn off motors
-  analogWrite(LmotorA, 0);
-  analogWrite(LmotorB, 0);
-  analogWrite(RmotorA, 0);
-  analogWrite(RmotorB, 0);
-}
-
-void startCharge() {
-  turnOffMotors();
-
-  // Change battery status from charged to flat
-  isCharged = 0;
-
-  // Record the voltage
-  highVolts = batteryVoltage;
-  startVolts = batteryVoltage;
-
-  // Record the time
-  chargeTimer = millis();
-
-  // Record start time
-  chargeStart = millis();
-
   // Disable motors and reset modes for when we resume
   leftPWM = 0;
-  leftMode = BRAKE;
+  leftMode = FORWARD;
   rightPWM = 0;
-  rightMode = BRAKE;
+  rightMode = FORWARD;
 
-  // Enable current regulator to charge battery
-  digitalWrite(Charger,0);
-
-  reportDeadBattery();
+  // Turn off motors
+  analogWrite(PIN_MOTOR_LEFT_A, 0);
+  analogWrite(PIN_MOTOR_LEFT_B, 0);
+  analogWrite(PIN_MOTOR_RIGHT_A, 0);
+  analogWrite(PIN_MOTOR_RIGHT_B, 0);
 }

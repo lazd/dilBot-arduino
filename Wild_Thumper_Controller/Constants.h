@@ -1,5 +1,5 @@
 // COMMUNICATION
-#define Brate           115200     // Baud rate for serial communications
+#define BAUDRATE        115200     // Baud rate for serial communications
 #define MODE_RC              0
 #define MODE_SERIAL          1
 
@@ -31,11 +31,9 @@
 #define RC_DEADBAND         35     // inputs do not have to be perfectly centered to stop motors
 #define RC_SCALE            12     // scale factor for RC signal to PWM
 
-// BATTERY CHARGER SETTINGS
+// BATTERY SETTINGS
 #define UNITSPERVOLT        67     // Units per volt
-#define BATVOLT            487     // This is the nominal battery voltage reading. Peak charge can only occur above this voltage.
-#define LOWVOLT            400     // This is the voltage at which the speed controller goes into recharge mode.
-#define CHARGETIMEOUT   300000     // If the battery voltage does not change in this number of milliseconds then stop charging.
+#define LOWVOLT            400     // This is the voltage at which the speed controller shuts down
 
 // H BRIDGE SETTINGS
 #define LEFTMAXAMPS        800     // set overload current for left motor
