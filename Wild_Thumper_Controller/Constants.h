@@ -14,8 +14,8 @@
 #define PING_LEFT           D2
 #define PING_CENTER         D4
 #define PING_RIGHT          D7
-#define RC_LEFT             D12
-#define RC_RIGHT            D10
+#define RC_LEFT             D_A2
+#define RC_RIGHT            D_A1
 
 // SERIAL
 #define COMMANDTIMEOUT     250     // Stop after this long if no commands received
@@ -27,8 +27,8 @@
 
 // RC MODE OPTIONS
 #define RC_MIX               1     // Set to 1 if L/R and F/R signals from RC need to be mixed
-#define RC_CENTER         1800     // when RC inputs are centered then input should be 1.5mS
-#define RC_DEADBAND         35     // inputs do not have to be perfectly centered to stop motors
+#define RC_CENTER         1500     // when RC inputs are centered then input should be 1.5mS
+#define RC_DEADBAND         75     // inputs do not have to be perfectly centered to stop motors
 #define RC_SCALE            12     // scale factor for RC signal to PWM
 
 // BATTERY SETTINGS

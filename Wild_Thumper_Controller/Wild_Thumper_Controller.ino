@@ -3,6 +3,11 @@
 #include <Wire.h>
 #include <LSM303.h>
 
+#include <TimerOne.h>
+
+#define ENCODER_DO_NOT_USE_INTERRUPTS
+#include <Encoder.h>
+
 // Globals
 unsigned int batteryVoltage;
 unsigned int leftAmps;
@@ -46,6 +51,13 @@ float heading;
 // Serial data
 int data;
 
+// Encoders
+// For positive numbers when going forward, left should be backwards, right should be in order
+Encoder leftEnc(D9, D8);
+Encoder rightEnc(D10, D12);
+long leftEncPos;
+long rightEncPos;
+
 void setup() {
   // Initialize I/O pins
 
@@ -64,8 +76,12 @@ void setup() {
   compass.enableDefault();
 
   // Compass calibration - in box, wire tied
-  compass.m_min = (LSM303::vector<int16_t>){+717, -8921, -1185};
-  compass.m_max = (LSM303::vector<int16_t>){+6771, -2171, +4772};
+  compass.m_min = (LSM303::vector<int16_t>){-2308, -2885, -4073};
+  compass.m_max = (LSM303::vector<int16_t>){+3515, +2938, +1480};
+
+  // Timer for encoder readings
+  Timer1.initialize(100);                // Set period of 10kHz
+  Timer1.attachInterrupt(readEncoders);  // attaches callback() as a timer overflow interrupt
 
   // Enable serial
   Serial.begin(BAUDRATE);
@@ -170,7 +186,7 @@ void loop() {
       }
     }
 
-    // Read distances
+    // Read ultrasonic sensors
     leftDist = doPing(PING_LEFT);
     centerDist = doPing(PING_CENTER);
     rightDist = doPing(PING_RIGHT);
@@ -184,6 +200,11 @@ void loop() {
   reportState();
 }
 
+void readEncoders() {
+  // Read encoders
+  leftEncPos = leftEnc.read();
+  rightEncPos = rightEnc.read();
+}
 
 //
 // Code for RC inputs
@@ -341,6 +362,10 @@ void reportState() {
   Serial.print("{\"type\":\"state\"");
   Serial.print(",\"heading\":");
   Serial.print(heading);
+  Serial.print(",\"leftEncPos\":");
+  Serial.print(leftEncPos);
+  Serial.print(",\"rightEncPos\":");
+  Serial.print(rightEncPos);
   Serial.print(",\"leftDist\":");
   Serial.print(leftDist);
   Serial.print(",\"centerDist\":");

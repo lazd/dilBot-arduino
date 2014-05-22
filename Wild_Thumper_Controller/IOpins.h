@@ -13,6 +13,10 @@
 #define D10                10  // Digital output 05
 #define D12                12  // Digital output 06
 
+#define D_A1               15  // Analog A1 as digital
+#define D_A2               16  // Analog A2 as digital
+#define D_A3               17  // Analog A3 as digital
+
 #define D18                18  // D18 for enabling pullup resistors
 #define D19                19  // D19 for enabling pullup resistors
 
