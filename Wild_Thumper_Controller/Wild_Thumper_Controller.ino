@@ -129,8 +129,8 @@ void loop() {
       switch (leftMode) {
         // left motor forward
         case FORWARD:
-          analogWrite(PIN_MOTOR_LEFT_A, 0);
-          analogWrite(PIN_MOTOR_LEFT_B, leftPWM);
+          analogWrite(PIN_MOTOR_LEFT_A, leftPWM);
+          analogWrite(PIN_MOTOR_LEFT_B, 0);
           break;
 
         // left motor brake
@@ -141,8 +141,8 @@ void loop() {
 
         // left motor reverse
         case REVERSE:
-          analogWrite(PIN_MOTOR_LEFT_A, leftPWM);
-          analogWrite(PIN_MOTOR_LEFT_B, 0);
+          analogWrite(PIN_MOTOR_LEFT_A, 0);
+          analogWrite(PIN_MOTOR_LEFT_B, leftPWM);
           break;
       }
     }
@@ -152,8 +152,8 @@ void loop() {
       switch (rightMode) {
         // right motor forward
         case FORWARD:
-          analogWrite(PIN_MOTOR_RIGHT_A, 0);
-          analogWrite(PIN_MOTOR_RIGHT_B, rightPWM);
+          analogWrite(PIN_MOTOR_RIGHT_A, rightPWM);
+          analogWrite(PIN_MOTOR_RIGHT_B, 0);
           break;
 
         // right motor brake
@@ -164,8 +164,8 @@ void loop() {
 
         // right motor reverse
         case REVERSE:
-          analogWrite(PIN_MOTOR_RIGHT_A, rightPWM);
-          analogWrite(PIN_MOTOR_RIGHT_B, 0);
+          analogWrite(PIN_MOTOR_RIGHT_A, 0);
+          analogWrite(PIN_MOTOR_RIGHT_B, rightPWM);
           break;
       }
     }
