@@ -55,8 +55,8 @@ int data;
 // For positive numbers when going forward, left should be backwards, right should be in order
 Encoder leftEnc(D9, D8);
 Encoder rightEnc(D10, D12);
-long leftEncPos;
-long rightEncPos;
+long leftTicks;
+long rightTicks;
 
 void setup() {
   // Initialize I/O pins
@@ -202,8 +202,8 @@ void loop() {
 
 void readEncoders() {
   // Read encoders
-  leftEncPos = leftEnc.read();
-  rightEncPos = rightEnc.read();
+  leftTicks = leftEnc.read();
+  rightTicks = rightEnc.read();
 }
 
 //
@@ -362,10 +362,10 @@ void reportState() {
   Serial.print("{\"type\":\"state\"");
   Serial.print(",\"heading\":");
   Serial.print(heading);
-  Serial.print(",\"leftEncPos\":");
-  Serial.print(leftEncPos);
-  Serial.print(",\"rightEncPos\":");
-  Serial.print(rightEncPos);
+  Serial.print(",\"leftTicks\":");
+  Serial.print(leftTicks);
+  Serial.print(",\"rightTicks\":");
+  Serial.print(rightTicks);
   Serial.print(",\"leftDist\":");
   Serial.print(leftDist);
   Serial.print(",\"centerDist\":");
